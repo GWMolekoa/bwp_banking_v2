@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { Button } from './ui/button'
 import { PlaidLinkOnSuccess, PlaidLinkOptions, usePlaidLink } from 'react-plaid-link'
 import { useRouter } from 'next/navigation'
-import { createLinkToken } from '@/lib/actions/user.actions'
+import { createLinkToken, exchangePublicToken } from '@/lib/actions/user.actions'
 
 // Link and Button Creation to connect to bank through plaid
 const PlaidLink = ({ user, variant}: PlaidLinkProps) => {
@@ -22,10 +22,10 @@ const PlaidLink = ({ user, variant}: PlaidLinkProps) => {
 
     // Exchange of public token to allow linking of bank accounts and push to home page
     const onSuccess = useCallback<PlaidLinkOnSuccess>( async (public_token: string) => {
-        //await exchangePublicToken({
-        //    publicToken: public_token,
-        //    user,
-        //})
+        await exchangePublicToken({
+            publicToken: public_token,
+            user,
+        })
 
         router.push('/');
 
