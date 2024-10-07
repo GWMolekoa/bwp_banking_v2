@@ -4,6 +4,8 @@ import { ID } from "node-appwrite";
 import { createAdminClient, createSessionClient } from "../appwrite";
 import { cookies } from "next/headers";
 import { parseStringify } from "../utils";
+import { CountryCode, Products } from "plaid";
+import { plaidClient } from "../plaid";
 
 // Process will be similar to Sign-Up function, Except we create an email and password session.
 export const signIn = async ({email, password}: signInProps) => {
@@ -76,5 +78,27 @@ export const logoutAccount = async () => {
     } catch (error) {
         return null;
         
+    }
+}
+
+// Creating the plaid link token to let it know of how we require its integration.
+export const createLinkToken = async (user: User) => {
+    try {
+        // Create neccesary parameters to generate a link token
+        const tokenParams = {
+            user: {
+                client_user_id: user.$id
+            },
+            client_name: user.name,
+            products: ['auth'] as Products[],
+            language: 'en',
+            country_codes: ['US'] as CountryCode[],
+        }
+
+        const response = await plaidClient.linkTokenCreate(tokenParams);
+
+        return parseStringify({ linkToken: response.data.link_token })
+    } catch (error) {
+        console.log(error);
     }
 }
