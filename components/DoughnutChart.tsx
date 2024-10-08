@@ -7,15 +7,18 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 // Read chartJSData docs to apply the doughnutChart Function to format chart
 function DoughnutChart({ accounts }: DoughnutChartProps) {
+    const accountNames = accounts.map((a) => a.name); 
+    const balances = accounts.map((a) => a.currentBalance)
+
     const data = {
         datasets: [
             {
               label: "Banks",
-              data: [1700, 2500, 3500],
+              data: balances,
               backgroundColor: ['#0747b6', '#2265d8', '#2f91fa']
               }
             ],
-            labels: ['Bank 1', 'Bank 2', 'Bank 3']
+            labels: accountNames
         }
 
         // Edit the DoughnutChart Properties Here

@@ -193,6 +193,7 @@ export const getTransactionStatus = (date: Date) => {
   const twoDaysAgo = new Date(today);
   twoDaysAgo.setDate(today.getDate() - 2);
 
+  // On Sandbox mode, it takes two days to process transactions
   return date > twoDaysAgo ? "Processing" : "Success";
 };
 
