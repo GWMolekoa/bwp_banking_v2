@@ -1,6 +1,6 @@
 'use server'
 
-import { ID } from "node-appwrite";
+import { ID, Query } from "node-appwrite";
 import { createAdminClient, createSessionClient } from "../appwrite";
 import { cookies } from "next/headers";
 import { encryptId, extractCustomerIdFromUrl, parseStringify } from "../utils";
@@ -15,15 +15,39 @@ const {
     APPWRITE_BANK_COLLECTION_ID: BANK_COLLECTION_ID,
 } = process.env; 
 
+export const getUserInfo = async ({ userId }: getUserInfoProps) => {
+    try {
+        const { database } = await createAdminClient();
+
+        const user = await database.listDocuments(
+            DATABASE_ID!,
+            USER_COLLECTION_ID!,
+            [Query.equal('userId', [userId])]
+        )
+
+        return parseStringify(user.documents[0]);
+    } catch (error) {
+        console.log(error)        
+    }
+}
+
 // Process will be similar to Sign-Up function, Except we create an email and password session.
 export const signIn = async ({email, password}: signInProps) => {
     try {
         // Mutation / Database / Make a Fetch
         const { account } = await createAdminClient();
+        const session = await account.createEmailPasswordSession(email, password);
 
-        const response = await account.createEmailPasswordSession(email, password);
+        cookies().set("appwrite-session", session.secret, {
+            path: "/",
+            httpOnly: true,
+            sameSite: "strict",
+            secure: true,
+        });
 
-        return parseStringify(response);
+        const user = await getUserInfo({ userId: session.userId }) 
+
+        return parseStringify(user);
     } catch (error) {
         console.error('Error', error);
     }
@@ -46,7 +70,7 @@ export const signUp = async ({ password, ...userData }: SignUpParams) => {
             `${firstName} ${lastName}`
         );
 
-        if(!newUserAccount) throw new Error('Error creating new user')
+        if(!newUserAccount) throw new Error('Error creating user')
 
         const dwollaCustomerUrl = await createDwollaCustomer({
             ...userData,
@@ -54,6 +78,7 @@ export const signUp = async ({ password, ...userData }: SignUpParams) => {
         })
 
         if(!dwollaCustomerUrl) throw new Error('Error creating Dwolla customer')
+
 
         const dwollaCustomerId = extractCustomerIdFromUrl(dwollaCustomerUrl);
 
@@ -81,7 +106,6 @@ export const signUp = async ({ password, ...userData }: SignUpParams) => {
 
         // NextJs prohobits passing large objects(such as user objects) through server actions. So we parseStringify.
         return parseStringify(newUser);
-
     } catch (error) {
         console.error('Error', error);
     }
@@ -92,7 +116,9 @@ export async function getLoggedInUser() {
     try {
       const { account } = await createSessionClient();
       
-      const user = await account.get();
+      const result = await account.get();
+
+      const user = await getUserInfo({ userId: result.$id})
 
       return parseStringify(user);
     } catch (error) {
@@ -142,11 +168,11 @@ export const createBankAccount = async ({
     accountId,
     accessToken,
     fundingSourceUrl,
-    shareableId,
+    sharableId,
 }: createBankAccountProps) => {
     try {
         // Create a bank account(within Appwrite DB) as a document
-        const { database} = await createAdminClient();
+        const { database } = await createAdminClient();
 
         const bankAccount = await database.createDocument(
             DATABASE_ID!,
@@ -158,13 +184,13 @@ export const createBankAccount = async ({
                 accountId,
                 accessToken,
                 fundingSourceUrl,
-                shareableId, 
+                sharableId, 
             }
-        )
+        );
 
         return parseStringify(bankAccount);
     } catch (error) {
-        
+       
     }
 }
 
@@ -218,7 +244,7 @@ export const exchangePublicToken = async ({
         accountId: accountData.account_id,
         accessToken,
         fundingSourceUrl,
-        shareableId: encryptId(accountData.account_id),
+        sharableId: encryptId(accountData.account_id),
       });
 
       // Revalidate the path to reflect the changes after account creation on home page
@@ -234,3 +260,36 @@ export const exchangePublicToken = async ({
     console.error("An error occurred while creating exchanging token:", error)
     }
   }
+
+export const getBanks = async ({ userId }: getBanksProps) => {
+    try {
+        const { database } = await createAdminClient();
+
+        const banks = await database.listDocuments(
+            DATABASE_ID!,
+            BANK_COLLECTION_ID!,
+            [Query.equal('userId', [userId])]
+        )
+
+        return parseStringify(banks.documents);
+    } catch (error) {
+
+        console.log(error)        
+    }
+}
+
+export const getBank = async ({ documentId }: getBankProps) => {
+    try {
+        const { database } = await createAdminClient();
+
+        const bank = await database.listDocuments(
+            DATABASE_ID!,
+            BANK_COLLECTION_ID!,
+            [Query.equal('$Id', [documentId])]
+        )
+
+        return parseStringify(bank.documents[0]);
+    } catch (error) {
+        console.log(error)        
+    }
+}
