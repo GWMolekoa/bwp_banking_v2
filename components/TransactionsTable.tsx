@@ -28,7 +28,7 @@ const CategoryBadge = ({ category }: CategoryBadgeProps) => {
     )
 }
 
-const TransactionsTable = ({ transactions}: TransactionTableProps) => {
+const TransactionsTable = ({transactions}: TransactionTableProps) => {
   return (
     <Table>
         
@@ -91,11 +91,9 @@ const TransactionsTable = ({ transactions}: TransactionTableProps) => {
                         </TableCell>
 
                         <TableCell className="pl-2 pr-10 max-md:hidden">
-                            {t.category}
                             <CategoryBadge category={t.category} />
                         </TableCell>
-
-
+                        
                     </TableRow>
                 )
             })}
